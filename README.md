@@ -40,7 +40,5 @@ npm install
 
 # Start development server
 npm run dev
-
-The EduPath application is deployed and accessible online:
-
-Live URL: https://leelasribalkampet.github.io/EduPath/
+```
+The EduPath application is deployed and accessible online: https://leelasribalkampet.github.io/EduPath/
