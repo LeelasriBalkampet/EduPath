@@ -1,4 +1,4 @@
-# EduPath – AI Smart Learning Assistant for Personalized Education
+# EduPath AI - Smart Learning Assistant for Personalized Education
 
 EduPath is a web-based smart learning assistant designed to support personalized and continuous education.  
 The system provides learning analytics, an interactive chat tutor, structured learning paths, and quiz-based assessment to help students identify weak areas and improve their learning outcomes.
