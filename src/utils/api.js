@@ -1,6 +1,6 @@
 // API utility for making authenticated requests to the backend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://edupath-b8qt.onrender.com';
 
 class ApiClient {
     constructor() {
