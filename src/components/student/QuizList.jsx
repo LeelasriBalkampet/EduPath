@@ -1,58 +1,33 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Clock, ChevronRight, ArrowLeft } from "lucide-react";
+import { BookOpen, Clock, ChevronRight, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 import QuizAttempt from "./QuizAttempt";
-
-const STORAGE_KEY = "edupath_questions";
+import api from "../../utils/api";
 
 export default function QuizList() {
   const [selectedQuiz, setSelectedQuiz] = useState(null);
   const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   /* ===============================
-     LOAD QUIZZES FROM LOCAL STORAGE
+     LOAD QUIZZES FROM BACKEND API
   ================================ */
   useEffect(() => {
-    const loadQuizzes = () => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-
-      if (!stored) {
-        setQuizzes([]);
-        return;
+    const loadQuizzes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api.quizzes.getAll();
+        setQuizzes(data.quizzes || []);
+      } catch (err) {
+        console.error("Failed to load quizzes:", err);
+        setError("Could not load quizzes. Make sure the backend is running.");
+      } finally {
+        setLoading(false);
       }
-
-      const questions = JSON.parse(stored);
-      const quizMap = {};
-
-      questions.forEach((q) => {
-        if (!quizMap[q.topic]) {
-          quizMap[q.topic] = {
-            id: `quiz-${q.topic}`,
-            title: `${q.topic} Quiz`,
-            topic: q.topic,
-            difficulty: "easy",
-            questions: [],
-          };
-        }
-        quizMap[q.topic].questions.push(q);
-      });
-
-      // Set difficulty (highest priority)
-      Object.values(quizMap).forEach((quiz) => {
-        if (quiz.questions.some((q) => q.difficulty === "hard")) {
-          quiz.difficulty = "hard";
-        } else if (quiz.questions.some((q) => q.difficulty === "medium")) {
-          quiz.difficulty = "medium";
-        }
-      });
-
-      setQuizzes(Object.values(quizMap));
     };
 
     loadQuizzes();
-
-    // Auto update when admin adds questions
-    window.addEventListener("storage", loadQuizzes);
-    return () => window.removeEventListener("storage", loadQuizzes);
   }, []);
 
   const getDifficultyColor = (difficulty) => {
@@ -91,6 +66,27 @@ export default function QuizList() {
   }
 
   /* ===============================
+     LOADING / ERROR STATES
+  ================================ */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        Loading quizzes…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 border border-destructive/30 bg-destructive/5 rounded-xl flex items-center gap-3">
+        <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+        <p className="text-sm text-destructive">{error}</p>
+      </div>
+    );
+  }
+
+  /* ===============================
      QUIZ LIST VIEW
   ================================ */
   return (
@@ -105,7 +101,7 @@ export default function QuizList() {
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {quizzes.map((quiz) => (
           <div
-            key={quiz.id}
+            key={quiz._id}
             onClick={() => setSelectedQuiz(quiz)}
             className="group cursor-pointer rounded-xl border hover:scale-[1.02] transition-all"
           >
@@ -122,9 +118,7 @@ export default function QuizList() {
                   {quiz.difficulty}
                 </span>
               </div>
-              <h3 className="text-lg font-semibold mt-3">
-                {quiz.title}
-              </h3>
+              <h3 className="text-lg font-semibold mt-3">{quiz.title}</h3>
             </div>
 
             <div className="p-4 space-y-3">
@@ -147,9 +141,7 @@ export default function QuizList() {
       {quizzes.length === 0 && (
         <div className="p-12 text-center border rounded-xl">
           <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">
-            No Quizzes Available
-          </h3>
+          <h3 className="text-lg font-semibold mb-2">No Quizzes Available</h3>
           <p className="text-muted-foreground">
             The admin hasn't created any quizzes yet. Check back later!
           </p>

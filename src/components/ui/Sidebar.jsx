@@ -8,9 +8,8 @@ export default function Sidebar() {
     <div className="flex h-screen">
       {/* Sidebar */}
       <div
-        className={`${
-          open ? "w-64" : "w-16"
-        } transition-all duration-300 bg-slate-900 text-white flex flex-col`}
+        className={`${open ? "w-64" : "w-16"
+          } transition-all duration-300 bg-slate-900 text-white flex flex-col`}
       >
         <button
           onClick={() => setOpen(!open)}
@@ -29,7 +28,7 @@ export default function Sidebar() {
 
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100">
-        <h1 className="text-2xl font-bold">EduPath AI</h1>
+        <h1 className="text-2xl font-bold">EduPath</h1>
       </div>
     </div>
   );

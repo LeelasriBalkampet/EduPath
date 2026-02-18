@@ -5,9 +5,8 @@ import {
   XCircle,
   Trophy,
   Target,
+  Loader2,
 } from "lucide-react";
-
-const ATTEMPT_KEY = "edupath_quiz_attempts";
 
 function getStrength(score) {
   if (score >= 80) return "strong";
@@ -16,16 +15,17 @@ function getStrength(score) {
 }
 
 export default function QuizAttempt({ quiz, onComplete }) {
-  const { currentStudent } = useAuth();
+  const { currentStudent, refreshUser } = useAuth();
 
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [showResult, setShowResult] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [scoreData, setScoreData] = useState(null);
 
   const question = quiz.questions[currentQuestion];
-  const progress =
-    ((currentQuestion + 1) / quiz.questions.length) * 100;
+  const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
 
   /* ===============================
      ANSWER SELECT
@@ -51,63 +51,64 @@ export default function QuizAttempt({ quiz, onComplete }) {
   /* ===============================
      SUBMIT QUIZ
   ================================ */
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
+    setSubmitError(null);
 
+    // Calculate score locally for display
     let correct = 0;
     quiz.questions.forEach((q, i) => {
-      if (selectedAnswers[i] === q.correctAnswer) {
-        correct++;
-      }
+      if (selectedAnswers[i] === q.correctAnswer) correct++;
     });
+    const scorePercentage = Math.round((correct / quiz.questions.length) * 100);
 
-    const scorePercentage = Math.round(
-      (correct / quiz.questions.length) * 100
-    );
+    try {
+      // Submit to backend API — this updates topicScores on the User model
+      const { default: api } = await import("../../utils/api");
 
-    const attempts =
-      JSON.parse(localStorage.getItem(ATTEMPT_KEY)) || [];
+      // Build answers payload: map local index answers to questionId + selectedAnswer
+      const answers = quiz.questions.map((q, i) => ({
+        questionId: q._id || q.id,
+        selectedAnswer: selectedAnswers[i] ?? -1,
+      }));
 
-    attempts.push({
-      id: `attempt-${Date.now()}`,
-      quizId: quiz.id,
-      studentId: currentStudent?.id || "student",
-      score: scorePercentage,
-      answers: selectedAnswers,
-      topic: quiz.topic,
-      completedAt: new Date().toISOString(),
-    });
+      await api.quizzes.submitAttempt(quiz._id || quiz.id, answers);
 
-    localStorage.setItem(ATTEMPT_KEY, JSON.stringify(attempts));
+      // Refresh user profile so dashboard topicScores update immediately
+      await refreshUser();
 
-    setShowResult(true);
-    setIsSubmitting(false);
+      setScoreData({ correct, scorePercentage });
+      setShowResult(true);
+    } catch (error) {
+      console.error("Quiz submit error:", error);
+
+      // Fallback: show result locally even if API fails
+      setSubmitError(
+        "Score saved locally only — could not reach the server. Dashboard may not reflect this attempt."
+      );
+      setScoreData({ correct, scorePercentage });
+      setShowResult(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   /* ===============================
      RESULT VIEW
   ================================ */
-  if (showResult) {
-    let correct = 0;
-    quiz.questions.forEach((q, i) => {
-      if (selectedAnswers[i] === q.correctAnswer) correct++;
-    });
-
-    const scorePercentage = Math.round(
-      (correct / quiz.questions.length) * 100
-    );
+  if (showResult && scoreData) {
+    const { correct, scorePercentage } = scoreData;
     const strength = getStrength(scorePercentage);
 
     return (
       <div className="max-w-2xl mx-auto rounded-xl border p-8 text-center animate-scale-in">
         <div
-          className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${
-            strength === "strong"
+          className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${strength === "strong"
               ? "gradient-success"
               : strength === "average"
-              ? "bg-warning/20"
-              : "bg-destructive/20"
-          }`}
+                ? "bg-warning/20"
+                : "bg-destructive/20"
+            }`}
         >
           {strength === "strong" ? (
             <Trophy className="w-10 h-10 text-success-foreground" />
@@ -119,41 +120,49 @@ export default function QuizAttempt({ quiz, onComplete }) {
         <h2 className="text-2xl font-bold mb-2">Quiz Completed!</h2>
         <p className="text-muted-foreground mb-6">{quiz.title}</p>
 
-        <div className="text-5xl font-bold mb-2">
-          {scorePercentage}%
-        </div>
-        <p className="text-lg text-muted-foreground mb-6">
+        <div className="text-5xl font-bold mb-2">{scorePercentage}%</div>
+        <p className="text-lg text-muted-foreground mb-2">
           {correct} out of {quiz.questions.length} correct
         </p>
+
+        {submitError && (
+          <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2 mb-4">
+            ⚠️ {submitError}
+          </p>
+        )}
+
+        {!submitError && (
+          <p className="text-sm text-success mb-6">
+            ✓ Score saved — your dashboard has been updated!
+          </p>
+        )}
 
         {/* ANSWER REVIEW */}
         <div className="text-left space-y-4 mt-8">
           <h3 className="font-semibold text-lg">Answer Review</h3>
 
           {quiz.questions.map((q, i) => {
-            const isCorrect =
-              selectedAnswers[i] === q.correctAnswer;
+            const isCorrect = selectedAnswers[i] === q.correctAnswer;
 
             return (
               <div
-                key={q.id}
-                className={`p-4 rounded-lg border ${
-                  isCorrect
+                key={q._id || q.id || i}
+                className={`p-4 rounded-lg border ${isCorrect
                     ? "border-success/30 bg-success/5"
                     : "border-destructive/30 bg-destructive/5"
-                }`}
+                  }`}
               >
                 <div className="flex items-start gap-3">
                   {isCorrect ? (
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
                   ) : (
-                    <XCircle className="w-5 h-5 text-destructive" />
+                    <XCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   )}
                   <div>
                     <p className="font-medium text-sm">{q.text}</p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Your answer:{" "}
-                      {q.options[selectedAnswers[i]] || "Not answered"}
+                      {q.options[selectedAnswers[i]] ?? "Not answered"}
                     </p>
                     {!isCorrect && (
                       <p className="text-sm text-success mt-1">
@@ -208,14 +217,13 @@ export default function QuizAttempt({ quiz, onComplete }) {
             <button
               key={index}
               onClick={() => handleSelectAnswer(index)}
-              className={`w-full p-4 text-left rounded-xl border-2 ${
-                selectedAnswers[currentQuestion] === index
+              className={`w-full p-4 text-left rounded-xl border-2 ${selectedAnswers[currentQuestion] === index
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50 hover:bg-muted/50"
-              }`}
+                }`}
             >
               <div className="flex gap-3">
-                <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <span className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                   {String.fromCharCode(65 + index)}
                 </span>
                 {option}
@@ -240,9 +248,10 @@ export default function QuizAttempt({ quiz, onComplete }) {
                 selectedAnswers.length !== quiz.questions.length ||
                 isSubmitting
               }
-              className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded disabled:opacity-50 flex items-center gap-2"
             >
-              Submit Quiz
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isSubmitting ? "Submitting…" : "Submit Quiz"}
             </button>
           ) : (
             <button

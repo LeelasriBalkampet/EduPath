@@ -3,91 +3,133 @@ import React, {
   useContext,
   useState,
   useCallback,
+  useEffect,
 } from "react";
-import { mockStudents, mockAdmins } from "../data/mockData";
+import api from "../utils/api";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const login = useCallback(async (email, password, role) => {
-    // Admin login
-    if (role === "admin") {
-      const admin = mockAdmins.find((a) => a.email === email);
-      if (admin && password === "admin123") {
-        setUser(admin);
-        return true;
-      }
-    }
+  // Check if user is already logged in on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = api.getToken();
 
-    // Student login
-    if (role === "student") {
-      const student = mockStudents.find((s) => s.email === email);
-
-      if (student && password === "student123") {
-        setUser(student);
-        return true;
+      if (token) {
+        try {
+          const response = await api.auth.getProfile();
+          setUser(response.user);
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          api.removeToken();
+        }
       }
 
-      // Auto-register new student
-      if (password === "student123") {
-        const newStudent = {
-          id: `student-${Date.now()}`,
-          email,
-          name: email.split("@")[0],
-          role: "student",
-          createdAt: new Date().toISOString(),
-          preferredLanguage: "en",
-          quizHistory: [],
-          topicScores: [],
-        };
+      setLoading(false);
+    };
 
-        mockStudents.push(newStudent);
-        setUser(newStudent);
-        return true;
-      }
-    }
-
-    return false;
+    checkAuth();
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
+  const register = useCallback(async (email, password, name, role = 'student') => {
+    try {
+      const response = await api.auth.register({ email, password, name, role });
+
+      // Save token and user
+      api.setToken(response.token);
+      setUser(response.user);
+
+      return { success: true };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
+  const login = useCallback(async (email, password, role) => {
+    try {
+      const response = await api.auth.login({ email, password, role });
+
+      // Save token and user
+      api.setToken(response.token);
+      setUser(response.user);
+
+      return true;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await api.auth.logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Always clear local state and token
+      api.removeToken();
+      setUser(null);
+    }
   }, []);
 
   const updateLanguage = useCallback(
-    (language) => {
+    async (language) => {
       if (user && user.role === "student") {
-        const updatedStudent = {
-          ...user,
-          preferredLanguage: language,
-        };
+        try {
+          await api.students.updateLanguage(user.id, language);
 
-        setUser(updatedStudent);
-
-        const index = mockStudents.findIndex(
-          (s) => s.id === user.id
-        );
-        if (index !== -1) {
-          mockStudents[index] = updatedStudent;
+          // Update local user state
+          setUser(prevUser => ({
+            ...prevUser,
+            preferredLanguage: language,
+          }));
+        } catch (error) {
+          console.error('Update language error:', error);
         }
       }
     },
     [user]
   );
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await api.auth.getProfile();
+      setUser(response.user);
+    } catch (error) {
+      console.error('Refresh user error:', error);
+    }
+  }, []);
+
   const currentStudent =
     user && user.role === "student" ? user : null;
+
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+      }}>
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
+        register,
         login,
         logout,
         updateLanguage,
+        refreshUser,
         currentStudent,
       }}
     >

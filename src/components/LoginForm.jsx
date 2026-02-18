@@ -8,7 +8,7 @@ import {
   Lock,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-export default function LoginForm({ role, onBack, onSuccess }) {
+export default function LoginForm({ role, onBack, onSuccess, onRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -62,9 +62,8 @@ export default function LoginForm({ role, onBack, onSuccess }) {
         {/* Header */}
         <div className="text-center">
           <div
-            className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${
-              isAdmin ? "gradient-accent" : "gradient-primary"
-            }`}
+            className={`w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center ${isAdmin ? "gradient-accent" : "gradient-primary"
+              }`}
           >
             <Icon className="w-8 h-8 text-primary-foreground" />
           </div>
@@ -112,9 +111,8 @@ export default function LoginForm({ role, onBack, onSuccess }) {
           <button
             type="submit"
             disabled={isLoading}
-            className={`w-full h-12 rounded-lg flex items-center justify-center gap-2 text-white ${
-              isAdmin ? "bg-accent" : "bg-primary"
-            }`}
+            className={`w-full h-12 rounded-lg flex items-center justify-center gap-2 text-white ${isAdmin ? "bg-accent" : "bg-primary"
+              }`}
           >
             {isLoading ? (
               <>
@@ -127,8 +125,21 @@ export default function LoginForm({ role, onBack, onSuccess }) {
           </button>
         </form>
 
-        
-        
+        {/* Registration Link - Only for Students */}
+        {!isAdmin && onRegister && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Don't have an account?{" "}
+              <button
+                onClick={onRegister}
+                className="text-primary font-medium hover:underline"
+              >
+                Register
+              </button>
+            </p>
+          </div>
+        )}
+
       </div>
     </div>
   );

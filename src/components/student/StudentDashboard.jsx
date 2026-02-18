@@ -64,7 +64,7 @@ export default function StudentDashboard() {
                 icon={Target}
                 label="Weak Topics"
                 value={weakTopics.length}
-                color="bg-destructive/10"
+                color="gradient-destructive"
               />
               <StatCard
                 icon={GraduationCap}
@@ -134,7 +134,7 @@ export default function StudentDashboard() {
                 <GraduationCap className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="font-bold">EduPath AI</h1>
+                <h1 className="font-bold">EduPath</h1>
                 <p className="text-sm text-muted-foreground">
                   Welcome, {user?.name}
                 </p>
@@ -178,11 +178,10 @@ export default function StudentDashboard() {
               <button
                 key={id}
                 onClick={() => setActiveTab(id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded ${
-                  activeTab === id
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground"
-                }`}
+                className={`flex items-center gap-2 px-4 py-2 rounded ${activeTab === id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground"
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -201,14 +200,14 @@ export default function StudentDashboard() {
 
 /* ---------- Small Components ---------- */
 
-function StatCard({ icon: Icon, label, value, color }) {
+function StatCard({ icon: Icon, label, value, color, iconColor = "text-white" }) {
   return (
     <div className="border rounded-xl p-6 hover:scale-[1.02] transition">
       <div className="flex items-center gap-4">
         <div
           className={`w-12 h-12 rounded-xl flex items-center justify-center ${color}`}
         >
-          <Icon className="w-6 h-6 text-white" />
+          <Icon className={`w-6 h-6 ${iconColor}`} />
         </div>
         <div>
           <p className="text-sm text-muted-foreground">{label}</p>

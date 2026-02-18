@@ -1,0 +1,22 @@
+﻿[dotenv@17.2.3] injecting env (7) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+≡ƒöì Connecting to Database...
+Γ£à Connected to MongoDB
+
+≡ƒæÑ USERS (5 total):
+  - Dr. Rajesh Kumar (admin@edupath.com) [admin]
+  - Amit Reddy (amit@student.com) [student]
+  - Priya Patel (priya@student.com) [student]
+  - Rahul Sharma (rahul@student.com) [student]
+  - Chandu (chandu@student.com) [student]
+
+≡ƒô¥ QUIZZES (4 total):
+  - Algorithms Fundamentals (Algorithms)
+  - Data Structures Basics (Data Structures)
+  - Advanced Algorithms (Algorithms)
+  - Operating Systems (Operating Systems)
+
+≡ƒÆ¼ CHAT LOGS: 0 total records
+
+≡ƒÄ» QUIZ ATTEMPTS: 10 total records
+
+--- Inspection Complete ---

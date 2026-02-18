@@ -19,6 +19,18 @@ export default {
 
         muted: "#f1f5f9",
         "muted-foreground": "#64748b",
+
+        destructive: "#ef4444",
+        "destructive-foreground": "#ffffff",
+
+        success: "#22c55e",
+        "success-foreground": "#ffffff",
+
+        warning: "#eab308",
+        "warning-foreground": "#ffffff",
+
+        popover: "#ffffff",
+        "popover-foreground": "#0f172a",
       },
       borderRadius: {
         xl: "1rem",

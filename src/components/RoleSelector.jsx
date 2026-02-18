@@ -1,10 +1,19 @@
-import { GraduationCap, ShieldCheck } from "lucide-react";
+import { GraduationCap, ShieldCheck, ArrowLeft } from "lucide-react";
 
-export default function RoleSelector({ onSelectRole }) {
+export default function RoleSelector({ onSelectRole, onBack }) {
   return (
     <div className="min-h-screen gradient-hero flex items-center justify-center p-4">
       <div className="w-full max-w-4xl animate-fade-in">
-        {/* Header */}
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground mb-8 transition-colors group"
+        >
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+          Back to Home
+        </button>
+
+        {/* Header ... rest of the file */}
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-3 mb-6">
             <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center shadow-glow">
@@ -12,7 +21,7 @@ export default function RoleSelector({ onSelectRole }) {
             </div>
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-4">
-            EduPath AI
+            EduPath
           </h1>
           <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto">
             Smart Learning Assistant for Continuous Education

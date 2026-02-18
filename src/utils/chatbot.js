@@ -90,27 +90,98 @@ export function generateResponse(input, language = "en") {
 }
 
 // ===============================
-// TEXT TO SPEECH
+// TEXT TO SPEECH (TTS)
 // ===============================
+
+const LANG_MAP = {
+  en: "en-US",
+  hi: "hi-IN",
+  te: "te-IN",
+};
 
 let utterance = null;
 
-export function speak(text, language = "en") {
+/**
+ * Speak text aloud using the browser's SpeechSynthesis API.
+ * @param {string} text - Text to speak
+ * @param {string} language - Language code: 'en' | 'hi' | 'te'
+ * @param {Function} [onEnd] - Optional callback fired when speech finishes or is cancelled
+ */
+export function speak(text, language = "en", onEnd) {
   if (!("speechSynthesis" in window)) return;
 
   stopSpeaking();
   utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = LANG_MAP[language] || "en-US";
+  utterance.rate = 0.95;
 
-  const map = {
-    en: "en-US",
-    hi: "hi-IN",
-    te: "te-IN",
-  };
+  if (onEnd) {
+    utterance.onend = onEnd;
+    utterance.onerror = onEnd;
+  }
 
-  utterance.lang = map[language] || "en-US";
   window.speechSynthesis.speak(utterance);
 }
 
 export function stopSpeaking() {
   window.speechSynthesis?.cancel();
+}
+
+// ===============================
+// SPEECH TO TEXT (STT)
+// ===============================
+
+/**
+ * Start listening via the browser's SpeechRecognition API.
+ * @param {Function} onResult - Called with the transcript string when speech is recognized
+ * @param {Function} onEnd   - Called when recognition ends (naturally or via stopListening)
+ * @param {string} language  - Language code: 'en' | 'hi' | 'te'
+ * @returns {SpeechRecognition|null} The recognition instance (pass to stopListening to stop early)
+ */
+export function startListening(onResult, onEnd, language = "en") {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    console.warn("SpeechRecognition is not supported in this browser.");
+    onEnd && onEnd();
+    return null;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = LANG_MAP[language] || "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  recognition.continuous = false;
+
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    onResult && onResult(transcript);
+  };
+
+  recognition.onend = () => {
+    onEnd && onEnd();
+  };
+
+  recognition.onerror = (event) => {
+    console.error("SpeechRecognition error:", event.error);
+    onEnd && onEnd();
+  };
+
+  recognition.start();
+  return recognition;
+}
+
+/**
+ * Stop an active SpeechRecognition instance.
+ * @param {SpeechRecognition} recognition
+ */
+export function stopListening(recognition) {
+  if (recognition) {
+    try {
+      recognition.stop();
+    } catch (_) {
+      // already stopped
+    }
+  }
 }

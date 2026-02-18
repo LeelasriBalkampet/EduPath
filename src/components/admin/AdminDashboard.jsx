@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import {
   LogOut,
@@ -8,21 +8,107 @@ import {
   Settings,
   ShieldCheck,
   Plus,
+  HelpCircle,
+  Layers,
+  Loader2,
 } from "lucide-react";
 
 import QuestionManager from "./QuestionManager";
 import StudentList from "./StudentList";
 import AdminAnalytics from "./AdminAnalytics";
-import { mockStudents, mockQuestions, mockQuizzes } from "../../data/mockData";
+import QuizBrowser from "./QuizBrowser";
+import api from "../../utils/api";
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
+  // Stats state
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    totalQuizzes: 0,
+    totalQuestions: 0,
+    totalTopics: 0,
+  });
+  const [recentStudents, setRecentStudents] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  /* ===============================
+     LOAD REAL STATS FROM API
+  ================================ */
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoadingStats(true);
+      try {
+        const [studentsRes, quizzesRes] = await Promise.all([
+          api.students.getAll(),
+          api.quizzes.getAll(),
+        ]);
+
+        const students = studentsRes.students || [];
+        const quizzes = quizzesRes.quizzes || [];
+        const totalQuestions = quizzes.reduce(
+          (sum, q) => sum + (q.questions?.length || 0),
+          0
+        );
+        const topics = new Set(quizzes.map((q) => q.topic)).size;
+
+        setStats({
+          totalStudents: students.length,
+          totalQuizzes: quizzes.length,
+          totalQuestions,
+          totalTopics: topics,
+        });
+
+        // Show 5 most recent students
+        setRecentStudents(students.slice(0, 5));
+      } catch (err) {
+        console.error("Failed to load admin stats:", err);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    if (activeTab === "overview") fetchStats();
+  }, [activeTab]);
+
+  const statCards = [
+    {
+      icon: Users,
+      label: "Total Students",
+      value: stats.totalStudents,
+      bg: "gradient-primary",
+      tab: "students",
+    },
+    {
+      icon: BookOpen,
+      label: "Total Quizzes",
+      value: stats.totalQuizzes,
+      bg: "gradient-accent",
+      tab: "quizBrowser",
+    },
+    {
+      icon: HelpCircle,
+      label: "Total Questions",
+      value: stats.totalQuestions,
+      bg: "gradient-success",
+      tab: "questions",
+    },
+    {
+      icon: Layers,
+      label: "Topics",
+      value: stats.totalTopics,
+      bg: "gradient-primary",
+      tab: "questions",
+    },
+  ];
+
   const renderContent = () => {
     switch (activeTab) {
       case "questions":
         return <QuestionManager />;
+      case "quizBrowser":
+        return <QuizBrowser onBack={() => setActiveTab("overview")} />;
       case "students":
         return <StudentList />;
       case "analytics":
@@ -32,39 +118,15 @@ export default function AdminDashboard() {
           <div className="space-y-6 animate-fade-in">
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[
-                {
-                  icon: Users,
-                  label: "Total Students",
-                  value: mockStudents.length,
-                  bg: "gradient-primary",
-                },
-                {
-                  icon: BookOpen,
-                  label: "Total Quizzes",
-                  value: mockQuizzes.length,
-                  bg: "gradient-accent",
-                },
-                {
-                  icon: BarChart3,
-                  label: "Total Questions",
-                  value: mockQuestions.length,
-                  bg: "gradient-success",
-                },
-                {
-                  icon: Settings,
-                  label: "Topics",
-                  value: new Set(mockQuestions.map((q) => q.topic)).size,
-                  bg: "bg-muted",
-                },
-              ].map((item, i) => (
+              {statCards.map((item, i) => (
                 <div
                   key={i}
-                  className="rounded-xl border p-6 hover:scale-[1.02] transition-transform"
+                  onClick={() => setActiveTab(item.tab)}
+                  className="rounded-xl border p-6 hover:scale-[1.02] transition-transform cursor-pointer hover:border-primary/40 hover:shadow-sm"
                 >
                   <div className="flex items-center gap-4">
                     <div
-                      className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center`}
+                      className={`w-12 h-12 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0`}
                     >
                       <item.icon className="w-6 h-6 text-white" />
                     </div>
@@ -72,7 +134,11 @@ export default function AdminDashboard() {
                       <p className="text-sm text-muted-foreground">
                         {item.label}
                       </p>
-                      <p className="text-2xl font-bold">{item.value}</p>
+                      {loadingStats ? (
+                        <Loader2 className="w-5 h-5 animate-spin mt-1 text-muted-foreground" />
+                      ) : (
+                        <p className="text-2xl font-bold">{item.value}</p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -120,39 +186,46 @@ export default function AdminDashboard() {
             {/* Recent Students */}
             <div className="rounded-xl border p-6">
               <h3 className="font-semibold mb-4">Recent Students</h3>
-              <div className="space-y-4">
-                {mockStudents.slice(0, 5).map((student) => (
-                  <div
-                    key={student.id}
-                    className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
-                        {student.name.charAt(0)}
+              {loadingStats ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Loading…
+                </div>
+              ) : recentStudents.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">
+                  No students registered yet
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {recentStudents.map((student) => (
+                    <div
+                      key={student._id}
+                      className="flex items-center justify-between p-4 rounded-xl bg-muted/30 hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-semibold">
+                          {student.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-medium">{student.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {student.email}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{student.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {student.email}
+                      <div className="text-right">
+                        <p className="text-sm font-medium">
+                          {student.topicScores?.length || 0} topics
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {student.topicScores?.filter((t) => t.strength === "weak").length || 0}{" "}
+                          weak
                         </p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">
-                        {student.topicScores.length} topics
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {
-                          student.topicScores.filter(
-                            (t) => t.strength === "weak"
-                          ).length
-                        }{" "}
-                        weak
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );
@@ -197,11 +270,10 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg ${
-                  activeTab === tab.id
-                    ? "bg-background text-accent border-b-2 border-accent"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                }`}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium rounded-t-lg ${activeTab === tab.id
+                  ? "bg-background text-accent border-b-2 border-accent"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  }`}
               >
                 <tab.icon className="w-4 h-4" />
                 {tab.label}
@@ -211,9 +283,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
-        {renderContent()}
-      </main>
+      <main className="container mx-auto px-4 py-6">{renderContent()}</main>
     </div>
   );
 }
