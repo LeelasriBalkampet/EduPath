@@ -97,6 +97,7 @@ export default function StudentDashboard() {
                 subtitle="Your personalized journey"
                 onClick={() => setActiveTab("learning-path")}
               />
+
             </div>
 
             {/* Weak Topics */}
@@ -168,7 +169,7 @@ export default function StudentDashboard() {
           </div>
 
           {/* Navigation */}
-          <nav className="flex gap-2 mt-4">
+          <nav className="flex gap-2 mt-4 flex-wrap">
             {[
               ["dashboard", "Dashboard", TrendingUp],
               ["chat", "AI Tutor", MessageCircle],

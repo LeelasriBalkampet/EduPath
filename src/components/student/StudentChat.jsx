@@ -18,14 +18,41 @@ export default function StudentChat() {
   const language = currentStudent?.preferredLanguage || "en";
 
   useEffect(() => {
-    setMessages([
-      {
-        id: 1,
-        role: "assistant",
-        content: "Hello! Ask me anything about Data Structures & Algorithms."
+    // Fetch chat history
+    const loadHistory = async () => {
+      if (currentStudent?._id) {
+        try {
+          const { default: api } = await import("../../utils/api");
+          const historyData = await api.chat.getHistory(currentStudent._id);
+
+          if (historyData?.messages?.length > 0) {
+            // Map backend messages to frontend format
+            const formattedHistory = historyData.messages.map(msg => ({
+              id: msg._id || Date.now() + Math.random(),
+              role: msg.role,
+              content: msg.content
+            }));
+
+            setMessages(formattedHistory);
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to load chat history:", error);
+        }
       }
-    ]);
-  }, []);
+
+      // Fallback/Default welcome message if no history or not logged in
+      setMessages([
+        {
+          id: 1,
+          role: "assistant",
+          content: "Hello! Ask me anything about Data Structures & Algorithms."
+        }
+      ]);
+    };
+
+    loadHistory();
+  }, [currentStudent]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -132,8 +159,8 @@ export default function StudentChat() {
             <div className={`group relative max-w-[75%]`}>
               <div
                 className={`p-3 rounded-2xl text-sm leading-relaxed ${m.role === "user"
-                    ? "bg-primary text-white rounded-tr-sm"
-                    : "bg-muted rounded-tl-sm"
+                  ? "bg-primary text-white rounded-tr-sm"
+                  : "bg-muted rounded-tl-sm"
                   }`}
                 dangerouslySetInnerHTML={{ __html: m.content.replace(/\n/g, "<br>") }}
               />
@@ -194,8 +221,8 @@ export default function StudentChat() {
           onClick={handleMicToggle}
           title={isListening ? "Stop listening" : "Speak your question"}
           className={`p-2 rounded-full transition-all flex-shrink-0 ${isListening
-              ? "bg-red-500 text-white shadow-lg shadow-red-200 animate-pulse"
-              : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
+            ? "bg-red-500 text-white shadow-lg shadow-red-200 animate-pulse"
+            : "bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary"
             }`}
         >
           {isListening ? <MicOff size={16} /> : <Mic size={16} />}

@@ -200,6 +200,34 @@ router.post('/:id/attempt', authenticate, requireRole('student'), validationRule
             });
         }
 
+        // Generate customized learning plan if score is weak (< 70%)
+        if (score < 70) {
+            try {
+                console.log(`Generating learning plan for weak topic: ${quiz.topic}`);
+                const { getLearningPlan } = require('../services/aiService.cjs');
+                const newResources = await getLearningPlan([quiz.topic]);
+
+                if (newResources && Array.isArray(newResources)) {
+                    let addedCount = 0;
+                    for (const resource of newResources) {
+                        // Check if resource already exists (by URL)
+                        const exists = student.suggestedResources.some(r => r.url === resource.url);
+                        if (!exists) {
+                            student.suggestedResources.push({
+                                topic: quiz.topic,
+                                ...resource
+                            });
+                            addedCount++;
+                        }
+                    }
+                    console.log(`Added ${addedCount} new resources for ${quiz.topic}`);
+                }
+            } catch (aiError) {
+                console.error('Learning Plan Generation Failed:', aiError);
+                // Continue without failing the request
+            }
+        }
+
         await student.save();
 
         res.status(201).json({

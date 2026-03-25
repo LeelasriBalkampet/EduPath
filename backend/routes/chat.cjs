@@ -7,61 +7,60 @@ const { validationRules, validate } = require('../middleware/validation.cjs');
 const router = express.Router();
 
 // @route   POST /api/chat
-// @desc    Send chat message (temporarily using fallback due to rate limits)
+// @desc    Send chat message using Gemini AI
 // @access  Public (but saves history if authenticated)
 router.post('/', optionalAuth, validationRules.chatMessage, validate, async (req, res) => {
     try {
         const { message, language = 'en' } = req.body;
 
-        // Temporary fallback DSA responses due to Gemini rate limits
-        const DSA_RESPONSES = {
-            'binary search': {
-                en: 'Binary Search is an efficient algorithm for finding an element in a sorted array. It works by repeatedly dividing the search interval in half. Algorithm: Compare target with middle element. If equal, return index. If target is smaller, search left half. If target is larger, search right half. Time Complexity: O(log n) - much faster than linear search O(n). Space Complexity: O(1) iterative, O(log n) recursive. Requirements: Array must be sorted. Example: Finding 7 in [1,3,5,7,9,11] - Check middle (5), 7>5 so search right half [7,9,11], check middle (9), 7<9 so search left, found 7!',
-                hi: 'बाइनरी सर्च एक कुशल एल्गोरिदम है जो सॉर्ट किए गए ऐरे में एलिमेंट खोजने के लिए उपयोग होता है। यह सर्च इंटरवल को बार-बार आधा करके काम करता है। समय जटिलता: O(log n) - लीनियर सर्च O(n) से बहुत तेज। स्पेस जटिलता: O(1) इटरेटिव, O(log n) रिकर्सिव। आवश्यकता: ऐरे सॉर्ट होना चाहिए।',
-                te: 'బైనరీ సెర్చ్ సార్ట్ చేసిన అర్రేలో ఎలిమెంట్‌ను కనుగొనడానికి సమర్థవంతమైన అల్గారిథమ్. ఇది సెర్చ్ ఇంటర్వెల్‌ను పదే పదే సగానికి విభజించడం ద్వారా పనిచేస్తుంది. సమయ సంక్లిష్టత: O(log n) - లీనియర్ సెర్చ్ O(n) కంటే చాలా వేగంగా. స్పేస్: O(1) ఇటరేటివ్, O(log n) రికర్సివ్. అవసరం: అర్రే సార్ట్ చేయాలి.'
-            },
-            'dynamic programming': {
-                en: 'Dynamic Programming (DP) is an optimization technique that solves complex problems by breaking them into overlapping subproblems and storing computed results (memoization). Key principle: Optimal substructure - optimal solution contains optimal solutions to subproblems. Approaches: Top-down (memoization) and Bottom-up (tabulation). Classic examples: Fibonacci sequence, 0/1 Knapsack problem, Longest Common Subsequence. Time: O(n) to O(n*W). Used when problem has overlapping subproblems and optimal substructure.',
-                hi: 'डायनामिक प्रोग्रामिंग (DP) एक ऑप्टिमाइजेशन तकनीक है जो जटिल समस्याओं को ओवरलैपिंग सबप्रॉब्लम्स में विभाजित करके हल करती है। फिबोनैचि, नैपसैक समस्या में उपयोग।',
-                te: 'డైనమిక్ ప్రోగ్రామింగ్ (DP) సమస్యలను సబ్‌ప్రాబ్లమ్‌లుగా విభజించి ఫలితాలను నిల్వ చేసే సాంకేతికత. ఫిబోనాచ్చి, నాప్‌సాక్ సమస్యలలో ఉపయోగం.'
-            },
-            'array': {
-                en: 'An Array is a linear data structure that stores elements in contiguous memory. Operations: Access O(1), Search O(n), Insert/Delete O(n). Advantages: Fast random access. Disadvantages: Fixed size, expensive insertion/deletion.',
-                hi: 'ऐरे एक रैखिक डेटा संरचना है। एक्सेस: O(1), सर्च: O(n), इंसर्ट/डिलीट: O(n)।',
-                te: 'అర్రే రేఖీయ డేటా స్ట్రక్చర్. యాక్సెస్: O(1), చేర్చు/తొలగించు: O(n).'
-            },
-            'linked list': {
-                en: 'Linked List is a linear data structure where elements are stored in nodes. Each node contains data and a pointer to the next node. Types: Singly, Doubly, Circular. Operations: Insert/Delete at beginning O(1), Search O(n), Access O(n). Advantages: Dynamic size, efficient insertion/deletion. Disadvantages: No random access, extra memory for pointers.',
-                hi: 'लिंक्ड लिस्ट एक रैखिक डेटा संरचना है जहां एलिमेंट नोड्स में स्टोर होते हैं। इंसर्ट/डिलीट: O(1), सर्च: O(n)।',
-                te: 'లింక్డ్ లిస్ట్ నోడ్‌లలో ఎలిమెంట్‌లను నిల్వ చేసే డేటా స్ట్రక్చర్. చేర్చు/తొలగించు: O(1), వెతుకు: O(n).'
-            },
-            'stack': {
-                en: 'Stack is a LIFO (Last In First Out) data structure. Operations: Push O(1), Pop O(1), Peek O(1). Use cases: Function call stack, undo operations, expression evaluation, backtracking algorithms.',
-                hi: 'स्टैक एक LIFO डेटा संरचना है। पुश/पॉप: O(1)। उपयोग: फंक्शन कॉल, अनडू ऑपरेशन।',
-                te: 'స్టాక్ LIFO డేటా స్ట్రక్చర్. పుష్/పాప్: O(1). ఉపయోగం: ఫంక్షన్ కాల్స్, అన్‌డూ.'
-            },
-            'queue': {
-                en: 'Queue is a FIFO (First In First Out) data structure. Operations: Enqueue O(1), Dequeue O(1). Types: Simple Queue, Circular Queue, Priority Queue. Use cases: BFS, scheduling, buffering.',
-                hi: 'क्यू एक FIFO डेटा संरचना है। एनक्यू/डीक्यू: O(1)। उपयोग: BFS, शेड्यूलिंग।',
-                te: 'క్యూ FIFO డేటా స్ట్రక్చర్. ఎన్‌క్యూ/డీక్యూ: O(1). ఉపయోగం: BFS, షెడ్యూలింగ్.'
-            }
-        };
+        // Get AI response
+        const { getChatResponse } = require('../services/aiService.cjs');
+        let responseText;
 
-        const query = message.toLowerCase();
-        let response = {
-            en: 'I can help with DSA topics like binary search, arrays, linked lists, stacks, queues, trees, dynamic programming, and more. What would you like to learn?',
-            hi: 'मैं बाइनरी सर्च, ऐरे, लिंक्ड लिस्ट, स्टैक, क्यू जैसे DSA विषयों में मदद कर सकता हूँ। आप क्या सीखना चाहते हैं?',
-            te: 'నేను బైనరీ సెర్చ్, అర్రేలు, లింక్డ్ లిస్ట్‌లు, స్టాక్‌లు వంటి DSA విషయాలలో సహాయం చేయగలను. మీరు ఏమి నేర్చుకోవాలనుకుంటున్నారు?'
-        };
+        let historyMessages = [];
+        let chatHistory = null;
 
-        for (const [key, translations] of Object.entries(DSA_RESPONSES)) {
-            if (query.includes(key)) {
-                response = translations;
-                break;
+        // Fetch existing history to provide context
+        if (req.user) {
+            try {
+                chatHistory = await ChatHistory.findOne({ userId: req.user._id });
+                if (chatHistory && chatHistory.messages) {
+                    // Send the last 10 messages for context (5 turns)
+                    historyMessages = chatHistory.messages.slice(-10);
+                }
+            } catch (err) {
+                console.error('Error fetching history for context:', err);
             }
         }
 
-        const responseText = response[language] || response.en;
+        try {
+            responseText = await getChatResponse(message, language, historyMessages);
+        } catch (aiError) {
+            console.error('AI Service Error:', aiError);
+            // Fallback to static responses if AI fails
+            const DSA_RESPONSES = {
+                'binary search': {
+                    en: 'Binary Search is an efficient algorithm for finding an element in a sorted array. Time Complexity: O(log n).',
+                    hi: 'बाइनरी सर्च एक कुशल एल्गोरिदम है जो सॉर्ट किए गए ऐरे में एलिमेंट खोजने के लिए उपयोग होता है।',
+                    te: 'బైనరీ సెర్చ్ సార్ట్ చేసిన అర్రేలో ఎలిమెంట్‌ను కనుగొనడానికి సమర్థవంతమైన అల్గారిథమ్.'
+                },
+                // Add more if needed or just a generic error
+            };
+            const query = message.toLowerCase();
+            let staticResponse = {
+                en: "I'm having trouble connecting to my brain right now. Please try again later.",
+                hi: "मुझे अभी कनेक्ट करने में समस्या हो रही है। कृपया बाद में पुनः प्रयास करें।",
+                te: "నాకు ఇప్పుడు కనెక్ట్ కావడంలో ఇబ్బంది ఉంది. దయచేసి తర్వాత మళ్లీ ప్రయత్నించండి."
+            };
+
+            for (const [key, translations] of Object.entries(DSA_RESPONSES)) {
+                if (query.includes(key)) {
+                    staticResponse = translations;
+                    break;
+                }
+            }
+            responseText = staticResponse[language] || staticResponse.en;
+        }
 
         // Save chat history if user is authenticated
         if (req.user) {

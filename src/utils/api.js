@@ -1,6 +1,7 @@
 // API utility for making authenticated requests to the backend
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://edupath-b8qt.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 
 class ApiClient {
     constructor() {
@@ -121,6 +122,24 @@ class ApiClient {
         sendMessage: (message, language) => this.post('/api/chat', { message, language }),
         getHistory: (userId) => this.get(`/api/chat/history/${userId}`),
         clearHistory: (userId) => this.delete(`/api/chat/history/${userId}`),
+    };
+
+    // AI endpoints
+    ai = {
+        generateLearningPlan: (quizId, days) => this.post('/api/ai/generate-learning-plan', { quizId, days }),
+        getLatestLearningPlan: () => this.get('/api/ai/learning-plan/latest'),
+        getAllLearningPlans: () => this.get('/api/ai/learning-plans'),
+        getLearningPlanById: (planId) => this.get(`/api/ai/learning-plan/${planId}`),
+        deleteLearningPlan: (planId) => this.delete(`/api/ai/learning-plan/${planId}`),
+        markResourceComplete: (planId, dayNumber, resourceIndex, completed) =>
+            this.put(`/api/ai/learning-plan/${planId}/resource`, { dayNumber, resourceIndex, completed }),
+        submitConfidence: (planId, confidenceLevel) =>
+            this.put(`/api/ai/learning-plan/${planId}/confidence`, { confidenceLevel }),
+    };
+
+    // Admin endpoints
+    admin = {
+        getAllLearningPlans: () => this.get('/api/ai/admin/all-plans'),
     };
 }
 

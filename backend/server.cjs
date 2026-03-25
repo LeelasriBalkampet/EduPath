@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth.cjs');
 const studentRoutes = require('./routes/students.cjs');
 const quizRoutes = require('./routes/quizzes.cjs');
 const chatRoutes = require('./routes/chat.cjs');
+const aiRoutes = require('./routes/ai.cjs');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/quizzes', quizRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Fallback chat endpoint (kept for backwards compatibility)
 app.post('/api/chat-fallback', (req, res) => {

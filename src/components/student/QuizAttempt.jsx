@@ -8,6 +8,8 @@ import {
   Loader2,
 } from "lucide-react";
 
+import AILearningPlan from "./AILearningPlan";
+
 function getStrength(score) {
   if (score >= 80) return "strong";
   if (score >= 50) return "average";
@@ -99,86 +101,95 @@ export default function QuizAttempt({ quiz, onComplete }) {
   if (showResult && scoreData) {
     const { correct, scorePercentage } = scoreData;
     const strength = getStrength(scorePercentage);
+    const quizId = quiz._id || quiz.id;
 
     return (
-      <div className="max-w-2xl mx-auto rounded-xl border p-8 text-center animate-scale-in">
-        <div
-          className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${strength === "strong"
+      <div className="max-w-2xl mx-auto space-y-6 animate-scale-in">
+        {/* Score Card */}
+        <div className="rounded-xl border p-8 text-center">
+          <div
+            className={`w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center ${strength === "strong"
               ? "gradient-success"
               : strength === "average"
                 ? "bg-warning/20"
                 : "bg-destructive/20"
-            }`}
-        >
-          {strength === "strong" ? (
-            <Trophy className="w-10 h-10 text-success-foreground" />
-          ) : (
-            <Target className="w-10 h-10 text-foreground" />
+              }`}
+          >
+            {strength === "strong" ? (
+              <Trophy className="w-10 h-10 text-success-foreground" />
+            ) : (
+              <Target className="w-10 h-10 text-foreground" />
+            )}
+          </div>
+
+          <h2 className="text-2xl font-bold mb-2">Quiz Completed!</h2>
+          <p className="text-muted-foreground mb-6">{quiz.title}</p>
+
+          <div className="text-5xl font-bold mb-2">{scorePercentage}%</div>
+          <p className="text-lg text-muted-foreground mb-2">
+            {correct} out of {quiz.questions.length} correct
+          </p>
+
+          {submitError && (
+            <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2 mb-4">
+              ⚠️ {submitError}
+            </p>
+          )}
+
+          {!submitError && (
+            <p className="text-sm text-success mb-6">
+              ✓ Score saved — your dashboard has been updated!
+            </p>
           )}
         </div>
 
-        <h2 className="text-2xl font-bold mb-2">Quiz Completed!</h2>
-        <p className="text-muted-foreground mb-6">{quiz.title}</p>
-
-        <div className="text-5xl font-bold mb-2">{scorePercentage}%</div>
-        <p className="text-lg text-muted-foreground mb-2">
-          {correct} out of {quiz.questions.length} correct
-        </p>
-
-        {submitError && (
-          <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2 mb-4">
-            ⚠️ {submitError}
-          </p>
-        )}
-
-        {!submitError && (
-          <p className="text-sm text-success mb-6">
-            ✓ Score saved — your dashboard has been updated!
-          </p>
-        )}
+        {/* AI Features */}
+        <AILearningPlan quizId={quizId} />
 
         {/* ANSWER REVIEW */}
-        <div className="text-left space-y-4 mt-8">
-          <h3 className="font-semibold text-lg">Answer Review</h3>
+        <div className="border rounded-xl p-6">
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg">Answer Review</h3>
 
-          {quiz.questions.map((q, i) => {
-            const isCorrect = selectedAnswers[i] === q.correctAnswer;
+            {quiz.questions.map((q, i) => {
+              const isCorrect = selectedAnswers[i] === q.correctAnswer;
 
-            return (
-              <div
-                key={q._id || q.id || i}
-                className={`p-4 rounded-lg border ${isCorrect
+              return (
+                <div
+                  key={q._id || q.id || i}
+                  className={`p-4 rounded-lg border ${isCorrect
                     ? "border-success/30 bg-success/5"
                     : "border-destructive/30 bg-destructive/5"
-                  }`}
-              >
-                <div className="flex items-start gap-3">
-                  {isCorrect ? (
-                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <XCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-                  )}
-                  <div>
-                    <p className="font-medium text-sm">{q.text}</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Your answer:{" "}
-                      {q.options[selectedAnswers[i]] ?? "Not answered"}
-                    </p>
-                    {!isCorrect && (
-                      <p className="text-sm text-success mt-1">
-                        Correct: {q.options[q.correctAnswer]}
-                      </p>
+                    }`}
+                >
+                  <div className="flex items-start gap-3">
+                    {isCorrect ? (
+                      <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                     )}
+                    <div>
+                      <p className="font-medium text-sm">{q.text}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Your answer:{" "}
+                        {q.options[selectedAnswers[i]] ?? "Not answered"}
+                      </p>
+                      {!isCorrect && (
+                        <p className="text-sm text-success mt-1">
+                          Correct: {q.options[q.correctAnswer]}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         <button
           onClick={onComplete}
-          className="mt-8 px-6 py-3 rounded-xl bg-primary text-primary-foreground"
+          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-medium"
         >
           Back to Quizzes
         </button>
@@ -218,8 +229,8 @@ export default function QuizAttempt({ quiz, onComplete }) {
               key={index}
               onClick={() => handleSelectAnswer(index)}
               className={`w-full p-4 text-left rounded-xl border-2 ${selectedAnswers[currentQuestion] === index
-                  ? "border-primary bg-primary/5"
-                  : "border-border hover:border-primary/50 hover:bg-muted/50"
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50 hover:bg-muted/50"
                 }`}
             >
               <div className="flex gap-3">

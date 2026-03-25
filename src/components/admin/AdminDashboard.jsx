@@ -11,12 +11,14 @@ import {
   HelpCircle,
   Layers,
   Loader2,
+  Calendar,
 } from "lucide-react";
 
 import QuestionManager from "./QuestionManager";
 import StudentList from "./StudentList";
 import AdminAnalytics from "./AdminAnalytics";
 import QuizBrowser from "./QuizBrowser";
+import AdminLearningPlanManager from "./AdminLearningPlanManager";
 import api from "../../utils/api";
 
 export default function AdminDashboard() {
@@ -111,6 +113,8 @@ export default function AdminDashboard() {
         return <QuizBrowser onBack={() => setActiveTab("overview")} />;
       case "students":
         return <StudentList />;
+      case "learningPlans":
+        return <AdminLearningPlanManager />;
       case "analytics":
         return <AdminAnalytics />;
       default:
@@ -265,6 +269,7 @@ export default function AdminDashboard() {
               { id: "overview", label: "Overview", icon: BarChart3 },
               { id: "questions", label: "Questions", icon: BookOpen },
               { id: "students", label: "Students", icon: Users },
+              { id: "learningPlans", label: "Learning Plans", icon: Calendar },
               { id: "analytics", label: "Analytics", icon: BarChart3 },
             ].map((tab) => (
               <button
