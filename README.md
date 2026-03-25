@@ -1,16 +1,52 @@
-# React + Vite
+## EduPath AI – Smart Learning Assistant for Continuous Education
+EduPath AI is a full-stack AI-powered web application designed to provide personalized learning support for students. The system integrates an intelligent chatbot, user authentication, and cloud database storage to create a scalable and modern educational platform.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Live Deployment
 
-Currently, two official plugins are available:
+## Frontend (Vercel):
+edupath-brown.vercel.app
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Backend (Render):
+https://edupath-6djz.onrender.com
 
-## React Compiler
+## Database:
+MongoDB Atlas 
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Objective
 
-## Expanding the ESLint configuration
+- Traditional e-learning systems follow a one-size-fits-all approach. EduPath AI aims to:
+- Provide AI-based learning assistance
+- Offer interactive chatbot support
+- Enable secure user authentication
+- Store and manage user data in cloud database
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Tech Stack :
+## Frontend
+- React (Vite)
+- JavaScript
+- CSS
+- Deployed on Vercel
+
+## Backend
+- Node.js
+- Express.js
+- REST APIs
+- Deployed on Render
+
+## Database
+- MongoDB Atlas (Cloud – AWS Mumbai Region)
+
+## Local Installation
+1️. Clone the Repository
+- git clone https://github.com/LeelasriBalkampet/EduPath.git
+- cd EduPath
+
+2. Run Backend
+- cd backend
+- npm install
+- npm start
+
+3️. Run Frontend
+- cd frontend
+- npm install
+- npm run dev
