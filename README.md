@@ -4,7 +4,7 @@ EduPath AI is a full-stack AI-powered web application designed to provide person
 ## Live Deployment
 
 ## Frontend (Vercel):
-edupath-brown.vercel.app
+https://edupath-brown.vercel.app
 
 ## Backend (Render):
 https://edupath-6djz.onrender.com
